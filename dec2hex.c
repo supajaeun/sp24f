@@ -57,8 +57,7 @@ int main(int argc, char* argv[]) {
     if (isBigEndian()) {
         be_show_bytes((pointer)&a, sizeof(unsigned int));  // 빅 엔디언 방식 출력
     } else {
-        le_show_bytes((pointer)&a, sizeof(unsigned int));
-        be_show_bytes((pointer)&a, sizeof(unsigned int));   // 리틀 엔디언 방식 출력 (역순으로 출력)
+        le_show_bytes((pointer)&a, sizeof(unsigned int));   // 리틀 엔디언 방식 출력 (역순으로 출력)
     }
 
     // 정답 확인용 출력
