@@ -1,0 +1,1 @@
+/usr/bin/c++   -g   CMakeFiles/leveldb_bench.dir/main.cpp.o  -o leveldb_bench  leveldb/libleveldb.a -lsnappy -pthread 
