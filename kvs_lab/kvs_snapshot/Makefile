@@ -1,6 +1,6 @@
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c99 -I. -D_POSIX_C_SOURCE=200809L
+CFLAGS = -Wall -Wextra -std=c99 -pg -I. -D_POSIX_C_SOURCE=200809L
 
 # Source files
 BASE_SRCS = main.c open.c close.c put.c get.c snapshot_baseline.c

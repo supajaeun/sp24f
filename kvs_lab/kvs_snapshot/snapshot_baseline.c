@@ -46,10 +46,10 @@ int do_recovery(kvs_t* kvs, const char* filepath) {
         return -1;
     }
 
-    char key[100], value[100];
-    while (fscanf(file, "%99[^,],%99s\n", key, value) != EOF) {
+    char key[100], value[VALUE_MAX]; // VALUE_MAX 상수 사용
+    while (fscanf(file, "%99[^,],%4999[^\n]\n", key, value) != EOF) {
         // 입력 크기 검증
-        if (strlen(key) >= sizeof(key) || strlen(value) >= sizeof(value)) {
+        if (strlen(key) >= sizeof(key) || strlen(value) >= VALUE_MAX) {
             fprintf(stderr, "Invalid data in snapshot file\n");
             continue; // 잘못된 데이터를 건너뜀
         }

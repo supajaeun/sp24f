@@ -13,7 +13,13 @@ int put(kvs_t* kvs, const char* key, const char* value) {
         return -1;
     }
 
-    for (int i = kvs->kvs_mx_level; i >= 0; i--) { 
+    // 값이 너무 큰 경우 처리
+    if (strlen(value) >= VALUE_MAX) {
+        fprintf(stderr, "Value is too large\n");
+        return -1;
+    }
+
+    for (int i = kvs->kvs_mx_level; i >= 0; i--) {
         while (node->next[i] && strcmp(node->next[i]->key, key) < 0) {
             node = node->next[i];
         }
@@ -22,12 +28,16 @@ int put(kvs_t* kvs, const char* key, const char* value) {
     node = node->next[0];
 
     if (node && strcmp(node->key, key) == 0) { // 이미 해당 노드가 있다면 값을 업데이트
-        free(node->value);
+        free(node->value); // 기존 메모리 해제
         node->value = strdup(value);
+        if (!node->value) {
+            fprintf(stderr, "Failed to allocate memory for value\n");
+            return -1;
+        }
         return 0;
     } else {
         int level = rand_lv(); // 랜덤 레벨 생성
-        if (level > kvs->kvs_mx_level) { 
+        if (level > kvs->kvs_mx_level) {
             for (int i = kvs->kvs_mx_level + 1; i <= level; i++) {
                 prev_node[i] = kvs->header;
             }
@@ -39,7 +49,7 @@ int put(kvs_t* kvs, const char* key, const char* value) {
             return -1;
         }
         strcpy(node->key, key);
-        node->value = strdup(value);
+        node->value = strdup(value); // 값 복사
         if (!node->value) {
             fprintf(stderr, "Failed to allocate memory for value\n");
             free(node);

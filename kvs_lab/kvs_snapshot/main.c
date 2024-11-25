@@ -1,29 +1,26 @@
 #include "kvs.h"
+#include <stdio.h>
+#include <string.h>
 
 int main() {
-    kvs_t* kvs = open_kvs();
-
+    kvs_t* kvs = open_kvs(); // 수정된 함수 이름 사용
     if (!kvs) {
         printf("Failed to open KVS\n");
         return -1;
     }
 
-    // 테스트 워크로드 실행: cluster004.trc 파일 읽기
     FILE* workloadFile = fopen("cluster004.trc", "r");
     if (!workloadFile) {
-        printf("Workload file not found\n");
-        close_kvs(kvs);
+        perror("Failed to open workload file");
         return -1;
     }
 
-    char op[10], key[100], value[100];
-    while (fscanf(workloadFile, "%9[^,],%99[^,],%99s\n", op, key, value) != EOF) {
-    // 기존 key[100], value[100] 배열 크기에 맞게 조정
-    if (strcmp(op, "set") == 0) {
-        put(kvs, key, value);
+    char op[10], key[100], value[VALUE_MAX]; // VALUE_MAX 사용
+    while (fscanf(workloadFile, "%9[^,],%99[^,],%9999[^\n]\n", op, key, value) != EOF) {
+        if (strcmp(op, "set") == 0) {
+            put(kvs, key, value);
+        }
     }
-}
-
     fclose(workloadFile);
 
     // in-memory 데이터셋 준비 완료

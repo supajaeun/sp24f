@@ -1,4 +1,4 @@
-#include <fcntl.h>    // for open
+#include <fcntl.h>    // for open, O_CREAT, O_WRONLY, etc.
 #include <unistd.h>   // for write, read, fsync, close
 #include <string.h>   // for strlen
 #include <stdlib.h>   // for malloc, free
@@ -14,13 +14,22 @@ int do_snapshot(kvs_t* kvs, const char* filepath) {
         return -1;
     }
 
-    // KVS 데이터를 순회하며 파일에 저장
+    // KVS 데이터 저장
     node_t* node = kvs->header->next[0];
-    char buffer[256];
+    char buffer[VALUE_MAX]; // 충분히 큰 버퍼
     while (node) {
+        if (strlen(node->value) >= VALUE_MAX) {
+            node = node->next[0];
+            continue; // 너무 큰 값은 저장하지 않음
+        }
         int len = snprintf(buffer, sizeof(buffer), "%s,%s\n", node->key, node->value);
+        if (len < 0 || len >= (int)sizeof(buffer)) {
+            fprintf(stderr, "Error formatting snapshot data\n");
+            close(fd);
+            return -1;
+        }
         if (write(fd, buffer, len) < 0) {
-            perror("Failed to write to file");
+            perror("Failed to write to snapshot file");
             close(fd);
             return -1;
         }
@@ -47,17 +56,20 @@ int do_recovery(kvs_t* kvs, const char* filepath) {
         return -1;
     }
 
-    char buffer[256];
+    char buffer[VALUE_MAX]; // 충분히 큰 버퍼
     ssize_t bytes_read;
     while ((bytes_read = read(fd, buffer, sizeof(buffer) - 1)) > 0) {
         buffer[bytes_read] = '\0'; // 문자열 끝 처리
 
-        // 각 라인을 처리
         char* line = strtok(buffer, "\n");
         while (line) {
-            char key[100], value[100];
-            if (sscanf(line, "%99[^,],%99s", key, value) == 2) {
-                put(kvs, key, value); // 복구된 데이터를 KVS에 추가
+            char key[100], value[VALUE_MAX];
+            if (sscanf(line, "%99[^,],%4999[^\n]", key, value) == 2) {
+                if (strlen(value) >= VALUE_MAX) {
+                    fprintf(stderr, "Value exceeds limit during recovery: %s\n", value);
+                } else {
+                    put(kvs, key, value);
+                }
             }
             line = strtok(NULL, "\n");
         }
