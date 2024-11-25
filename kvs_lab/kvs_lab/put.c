@@ -1,49 +1,43 @@
 #include "kvs.h"
 
-// 난수로 레벨을 결정
-int random_level() {
-    int level = 1;
-    while (rand() < RAND_MAX / 2 && level < MAX_LEVEL)
-        level++;
-    return level;
-}
-
 int put(kvs_t* kvs, const char* key, const char* value) {
-    node_t* update[MAX_LEVEL];
-    node_t* current = kvs->header;
+    node_t* prev_node[MAX_LEVEL]; //MAX_LEVEL = 16
+    node_t* node = kvs->header;
 
-    // 각 레벨에서 삽입 위치를 찾기
-    for (int i = kvs->level - 1; i >= 0; i--) {
-        while (current->forward[i] != NULL && strcmp(current->forward[i]->key, key) < 0) {
-            current = current->forward[i];
+	//printf("put: %s, %s\n", key, value);
+
+    for (int i = kvs->kvs_mx_level; i >= 0; i--) { 
+        while (node->next[i] && strcmp(node->next[i]->key, key) < 0) {//key에 해당하는 값을 찾았거나 없을 경우
+            node = node->next[i];
         }
-        update[i] = current;
+        prev_node[i] = node;
     }
-    current = current->forward[0];
+    node = node->next[0];
 
-    // 키가 존재하면 값 갱신
-    if (current != NULL && strcmp(current->key, key) == 0) {
-        free(current->value);
-        current->value = strdup(value);
+    if (node && strcmp(node->key, key) == 0) { //이미 해당 노드가 있다면 값을 업데이트하기만 함.
+        free(node->value);
+        node->value = strdup(value);
         return 0;
     }
 
-    // 새로운 노드 삽입
-    int level = random_level();
-    if (level > kvs->level) {
-        for (int i = kvs->level; i < level; i++) {
-            update[i] = kvs->header;
+	else {
+        int level = rand_lv();
+        if (level > kvs->kvs_mx_level) { //최상위 레벨이 갱신되면서 현재 원소가 해당 레벨의 첫 원소가 됨 -> 따라서 header 다음 원소가 된다.
+            for (int i = kvs->kvs_mx_level + 1; i <= level; i++) {
+                prev_node[i] = kvs->header;
+            }
+            kvs->kvs_mx_level = level;
         }
-        kvs->level = level;
-    }
+        node = (node_t*)malloc(sizeof(node_t));
+        strcpy(node->key, key);
+        node->value = strdup(value);
 
-    node_t* new_node = (node_t*)malloc(sizeof(node_t));
-    strcpy(new_node->key, key);
-    new_node->value = strdup(value);
-    for (int i = 0; i < level; i++) {
-        new_node->forward[i] = update[i]->forward[i];
-        update[i]->forward[i] = new_node;
+		//inserting new node
+        for (int i = 0; i <= level; i++) { //모든 레벨에 대해서 prev_node와 next사이에 new_node(node)를 삽입(prev_node -> new_node -> next)
+            node->next[i] = prev_node[i]->next[i]; //new_node의 다음노드를 prev_node의 다음노드로 함.
+            prev_node[i]->next[i] = node; //prev_node의 다음노드를 new_node로 함.
+        }
+        kvs->items++;
+        return 0;
     }
-    kvs->items++;
-    return 0;
 }

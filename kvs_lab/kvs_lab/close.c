@@ -1,12 +1,16 @@
 #include "kvs.h"
 
-int close(kvs_t* kvs) {
-    node_t* current = kvs->header->forward[0];
-    while (current != NULL) {
-        node_t* next = current->forward[0];
-        free(current->value);
-        free(current);
-        current = next;
+int close(kvs_t* kvs)
+{
+	/* do program */
+    if (!kvs) return -1;
+
+    node_t* node = kvs->header->next[0];
+    while (node) {
+        node_t* next = node->next[0];
+        free(node->value);
+        free(node);
+        node = next;
     }
     free(kvs->header);
     free(kvs);
