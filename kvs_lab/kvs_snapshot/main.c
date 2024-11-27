@@ -44,13 +44,16 @@ int main() {
     }
 
     // 복구된 데이터 확인
-    char* recovered_value = get(kvs, "tweet17");
-    if (recovered_value) {
-        printf("Recovered value for 'tweet17': %s\n", recovered_value);
-    } else {
-        printf("Key 'tweet17' not found\n");
-    }
+    char* value1 = get(kvs, "tweet55");
+    char* value2 = get(kvs, "tweet13843");
+    char* value3 = get(kvs, "tweet3482");
+    
+    printf("Recovered value for 'tweet55': %s\n\n", value1);
+    printf("Recovered value for 'tweet13843': %s\n\n", value2);
+    printf("Recovered value for 'tweet3482': %s\n\n", value3);
+
 
     close_kvs(kvs);
     return 0;
 }
+
